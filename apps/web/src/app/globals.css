@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070a12;
+  --foreground: #e7ecff;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgba(99, 102, 241, 0.35);
+}
+
+.bg-hero {
+  background-image:
+    radial-gradient(1200px circle at 20% 0%, rgba(99, 102, 241, 0.22), transparent 55%),
+    radial-gradient(900px circle at 90% 15%, rgba(236, 72, 153, 0.14), transparent 50%),
+    radial-gradient(900px circle at 60% 92%, rgba(16, 185, 129, 0.12), transparent 55%);
+}

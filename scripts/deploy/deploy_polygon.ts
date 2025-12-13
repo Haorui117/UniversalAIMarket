@@ -29,26 +29,28 @@ async function main() {
   const escrowAddress = await escrow.getAddress();
   console.log("WeaponEscrow deployed to:", escrowAddress);
 
-  // Mint NFT to seller
-  const tokenId = 1;
-  const mintTx = await nft.mint(seller.address, tokenId);
-  await mintTx.wait();
-  console.log(`Minted tokenId ${tokenId} to seller (${seller.address})`);
+  // Mint NFTs to seller and deposit to escrow (demo-ready tokenIds)
+  const tokenIds = [1, 7];
 
-  // Seller approves and deposits to escrow
   const nftAsSeller = nft.connect(seller) as MockWeaponNFT;
-  const approveTx = await nftAsSeller.approve(escrowAddress, tokenId);
-  await approveTx.wait();
-  console.log(`Seller approved escrow for tokenId ${tokenId}`);
-
   const escrowAsSeller = escrow.connect(seller) as WeaponEscrow;
-  const depositTx = await escrowAsSeller.deposit(nftAddress, tokenId);
-  await depositTx.wait();
-  console.log(`NFT ${tokenId} deposited to escrow`);
 
-  // Verify NFT is now owned by escrow
-  const nftOwner = await nft.ownerOf(tokenId);
-  console.log(`NFT ${tokenId} owner is now: ${nftOwner}`);
+  for (const tokenId of tokenIds) {
+    const mintTx = await nft.mint(seller.address, tokenId);
+    await mintTx.wait();
+    console.log(`Minted tokenId ${tokenId} to seller (${seller.address})`);
+
+    const approveTx = await nftAsSeller.approve(escrowAddress, tokenId);
+    await approveTx.wait();
+    console.log(`Seller approved escrow for tokenId ${tokenId}`);
+
+    const depositTx = await escrowAsSeller.deposit(nftAddress, tokenId);
+    await depositTx.wait();
+    console.log(`NFT ${tokenId} deposited to escrow`);
+
+    const nftOwner = await nft.ownerOf(tokenId);
+    console.log(`NFT ${tokenId} owner is now: ${nftOwner}`);
+  }
 
   // Output addresses for .env
   console.log("\n=== Add to .env ===");

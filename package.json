@@ -23,6 +23,10 @@
 
     "demo:phase1": "hardhat run scripts/demo/phase1_demo.ts --network localhost",
     "demo:phase1:testnet": "hardhat run scripts/demo/phase1_demo.ts --network baseSepolia",
+
+    "web:dev": "pnpm -C apps/web dev",
+    "web:build": "pnpm -C apps/web build",
+    "web:lint": "pnpm -C apps/web lint",
     
     "lint": "eslint . --ext .ts",
     "format": "prettier --write ."

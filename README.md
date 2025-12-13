@@ -91,6 +91,48 @@ pnpm deploy:local
 pnpm demo:phase1
 ```
 
+## Frontend Demo (Buyer Agent ↔ Seller Agent)
+
+The Next.js app in `apps/web` is a hackathon-ready UI that shows:
+
+- Buyer agent browsing stores/products
+- Buyer ↔ seller agent negotiation with tool-call cards
+- A full cross-chain timeline (Base Sepolia → Zeta Athens → Polygon Amoy)
+- A single continuous Agent SSE stream (dialogue + tools + timeline)
+
+### Run the frontend
+
+```bash
+cd apps/web
+pnpm install
+pnpm dev
+```
+
+Open http://localhost:3000 and click **Start Shopping** → **Run Settlement**.
+
+- In the current Chinese UI: click **开始逛** to start the Agent flow.
+- If `checkoutMode=confirm`, wait for **确认结算** and click it.
+- If `checkoutMode=auto`, settlement starts automatically after the deal is prepared.
+
+### Testnet mode (real transactions)
+
+1. Deploy contracts: `pnpm deploy:all:testnet`
+2. Create `apps/web/.env.local` with:
+   - `BASE_GATEWAY_ADDRESS`, `BASE_USDC_ADDRESS`, `ZETA_UNIVERSAL_MARKET`
+   - `POLYGON_WEAPON_ESCROW`, `POLYGON_MOCK_WEAPON_NFT`
+   - `BUYER_PRIVATE_KEY`, `SELLER_PRIVATE_KEY`
+   - Optional RPC overrides: `BASE_SEPOLIA_RPC`, `POLYGON_AMOY_RPC`, `ZETA_ATHENS_RPC`
+
+If env/testnet funding is missing, the UI also supports **Simulation** mode.
+
+### External Agent (LangChain) integration
+
+The UI can proxy an external local Agent via SSE, while keeping the same judge-friendly UI:
+
+- Built-in demo: `GET /api/agent/stream?engine=builtin`
+- Proxy mode: `GET /api/agent/stream?engine=proxy&upstream=http://localhost:8080/api/agent/stream`
+- Tools for your Agent to call: `POST /api/agent/tool`
+
 ### Expected Output
 
 ```

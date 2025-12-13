@@ -87,27 +87,31 @@ async function main() {
   const marketAddress = await market.getAddress();
   console.log("UniversalMarket deployed to:", marketAddress);
 
-  // === Step 4: Mint NFT to seller ===
+  // === Step 4: Mint NFTs to seller ===
   console.log("\n--- Setting up NFT ---");
-  const tokenId = 1;
-  const mintTx = await nft.mint(seller.address, tokenId);
-  await mintTx.wait();
-  console.log(`Minted tokenId ${tokenId} to seller (${seller.address})`);
+  const tokenIds = [1, 7];
 
-  // === Step 5: Seller deposits NFT to escrow ===
   const nftAsSeller = nft.connect(seller) as MockWeaponNFT;
-  const approveTx = await nftAsSeller.approve(escrowAddress, tokenId);
-  await approveTx.wait();
-  console.log(`Seller approved escrow for tokenId ${tokenId}`);
-
   const escrowAsSeller = escrow.connect(seller) as WeaponEscrow;
-  const depositTx = await escrowAsSeller.deposit(nftAddress, tokenId);
-  await depositTx.wait();
-  console.log(`NFT ${tokenId} deposited to escrow`);
 
-  // Verify NFT is now owned by escrow
-  const nftOwner = await nft.ownerOf(tokenId);
-  console.log(`NFT ${tokenId} owner is now: ${nftOwner}`);
+  for (const tokenId of tokenIds) {
+    const mintTx = await nft.mint(seller.address, tokenId);
+    await mintTx.wait();
+    console.log(`Minted tokenId ${tokenId} to seller (${seller.address})`);
+
+    // === Step 5: Seller deposits NFT to escrow ===
+    const approveTx = await nftAsSeller.approve(escrowAddress, tokenId);
+    await approveTx.wait();
+    console.log(`Seller approved escrow for tokenId ${tokenId}`);
+
+    const depositTx = await escrowAsSeller.deposit(nftAddress, tokenId);
+    await depositTx.wait();
+    console.log(`NFT ${tokenId} deposited to escrow`);
+
+    // Verify NFT is now owned by escrow
+    const nftOwner = await nft.ownerOf(tokenId);
+    console.log(`NFT ${tokenId} owner is now: ${nftOwner}`);
+  }
 
   // === Step 6: Fund UniversalMarket with gas tokens ===
   console.log("\n--- Funding UniversalMarket ---");
