@@ -1,222 +1,122 @@
 # Universal AI Market
 
-> Cross-chain NFT Marketplace powered by ZetaChain
+> 用 AI Agent 改变跨链购物体验
 
-A decentralized marketplace that enables seamless cross-chain NFT trading. Buyers pay with USDC on Base, sellers receive payment on Base, and NFTs are delivered from Polygon - all orchestrated atomically through ZetaChain's Universal App.
+## 项目愿景
 
-## How It Works
+想象一下这样的场景：你在玩一款游戏，想购买一把强力武器 NFT。这个 NFT 在 Polygon 链上，而你的钱包里只有 Base 链上的 USDC。传统方式下，你需要：
+
+1. 找一个跨链桥，把 USDC 转到 Polygon
+2. 等待跨链确认（可能需要几分钟到几小时）
+3. 在 Polygon 上换成 MATIC 付 Gas
+4. 最后才能购买 NFT
+
+**太麻烦了！**
+
+我们的解决方案是：**让 AI Agent 替你完成一切**。
+
+你只需要告诉 Agent："帮我买那把量子之剑"，剩下的事情全部自动完成——跨链支付、卖家收款、NFT 交付，一气呵成。
+
+## 核心创新
+
+### 1. AI 驱动的购物体验
+
+买家不需要理解区块链的复杂性。AI Agent 会：
+- 自动发现并浏览商品
+- 与卖家 Agent 进行价格协商
+- 准备跨链交易参数
+- 实时展示交易进度
+
+### 2. ZetaChain 跨链结算
+
+利用 ZetaChain 的 Universal App 架构，实现了真正的原子化跨链交易：
 
 ```
-                            CROSS-CHAIN SETTLEMENT FLOW
-
-  BASE CHAIN                   ZETACHAIN                    POLYGON
-  ----------                   ---------                    -------
-      |                            |                            |
-  [Buyer]                          |                      [WeaponEscrow]
-      |                            |                        holds NFT
-      | 1. depositAndCall          |                            |
-      |    (80 USDC + Deal)        |                            |
-      |--------------------------->|                            |
-      |                            |                            |
-      |                    [UniversalMarket]                    |
-      |                      receives call                      |
-      |                            |                            |
-      |                            | 2. gateway.withdraw        |
-      |<---------------------------|    (80 USDC to seller)     |
-      |                            |                            |
-  [Seller]                         | 3. gateway.call            |
-  receives                         |--------------------------->|
-  80 USDC                          |    release(buyer, nft)     |
-      |                            |                            |
-      |                            |                      [Buyer]
-      |                            |                      receives
-      |                            |                        NFT
+买家 (Base)           ZetaChain              卖家 (Base) + NFT (Polygon)
+   |                      |                         |
+   | 1. 付款 USDC         |                         |
+   |--------------------->|                         |
+   |                      | 2. 转账给卖家            |
+   |                      |------------------------>|
+   |                      | 3. 释放 NFT 给买家       |
+   |<-------------------------------------------------|
+   |                      |                    收到 NFT
 ```
 
-### Settlement Flow
+三条链的操作在一次交易中完成，要么全部成功，要么全部回滚。
 
-1. **Buyer initiates purchase** - Calls `depositAndCall` on Base Gateway with USDC payment and deal details
-2. **ZetaChain orchestrates** - UniversalMarket receives the cross-chain message with the payment
-3. **Seller gets paid** - UniversalMarket calls `gateway.withdraw` to send USDC to seller on Base
-4. **NFT delivered** - UniversalMarket calls `gateway.call` to trigger NFT release on Polygon
-5. **Atomic settlement** - Both payment and NFT transfer happen in one cross-chain transaction
+### 3. 无需信任的托管机制
 
-## Smart Contracts
+NFT 由智能合约托管，只有在收到跨链消息后才会释放。卖家和买家都不需要信任对方——代码即法律。
 
-| Contract | Chain | Description |
-|----------|-------|-------------|
-| `UniversalMarket` | ZetaChain | Universal App that orchestrates cross-chain settlement |
-| `WeaponEscrow` | Polygon | Holds NFTs in escrow, releases on cross-chain command |
-| `MockWeaponNFT` | Polygon | ERC-721 NFT representing game items |
+## 技术架构
 
-## Gas Fee Model
+### 智能合约
 
-Cross-chain operations require gas fees on each destination chain. The marketplace supports three models:
+| 合约 | 链 | 功能 |
+|------|-----|------|
+| UniversalMarket | ZetaChain Athens | 核心协调合约，处理跨链消息 |
+| WeaponEscrow | Polygon Amoy | NFT 托管合约 |
+| MockWeaponNFT | Polygon Amoy | 示例 NFT 合约 |
 
-| Model | Buyer Pays | Seller Receives | Marketplace |
-|-------|-----------|-----------------|-------------|
-| Buyer pays extra | Price + gas | Full price | No cost |
-| Seller deduction | Price | Price - gas | No cost |
-| Marketplace subsidizes | Price | Full price | Pays gas |
+### 已部署地址 (Testnet)
 
-Current implementation uses the **marketplace subsidizes** model for best UX - the marketplace contract is pre-funded with gas tokens during deployment.
+- **MockWeaponNFT**: `0xE0EFF1C50040d7Fbcd56F5f0fcFCBad751c07c57` (Polygon Amoy)
+- **WeaponEscrow**: `0x0BAD4C5E163A7f2831bDB83Eaf48DaD2B472906c` (Polygon Amoy)
+- **UniversalMarket**: `0xE0EFF1C50040d7Fbcd56F5f0fcFCBad751c07c57` (ZetaChain Athens)
 
-## Quick Start
+## 快速体验
 
-### Prerequisites
+### 环境要求
 
 - Node.js >= 18
 - pnpm
-- Foundry (for anvil)
 
-### Installation
+### 安装
 
 ```bash
-# Install Foundry (if not installed)
-curl -L https://foundry.paradigm.xyz | bash
-foundryup
-
-# Install dependencies
 pnpm install
 ```
 
-### Run Locally
+### 运行演示
 
 ```bash
-# Terminal 1: Start ZetaChain localnet
-pnpm localnet:start
+# 启动市场前端
+pnpm market:dev
 
-# Terminal 2: Deploy and run demo
-pnpm deploy:local
-pnpm demo:phase1
+# 打开 http://localhost:3001
 ```
 
-## Frontend Demo (Buyer Agent ↔ Seller Agent)
+在界面右侧的 Agent 面板中：
+1. 选择运行模式（模拟 / Testnet）
+2. 点击「启动 Agent」
+3. 观看 AI Agent 自动完成购物流程
 
-The Next.js app in `apps/web` is a hackathon-ready UI that shows:
+### 模式说明
 
-- Buyer agent browsing stores/products
-- Buyer ↔ seller agent negotiation with tool-call cards
-- A full cross-chain timeline (Base Sepolia → Zeta Athens → Polygon Amoy)
-- A single continuous Agent SSE stream (dialogue + tools + timeline)
+- **模拟模式**：无需真实资金，快速展示完整流程
+- **Testnet 模式**：使用真实测试网进行跨链交易（需要配置私钥和测试代币）
 
-### Run the frontend
-
-```bash
-cd apps/web
-pnpm install
-pnpm dev
-```
-
-Open http://localhost:3000 and click **Start Shopping** → **Run Settlement**.
-
-- In the current Chinese UI: click **开始逛** to start the Agent flow.
-- If `checkoutMode=confirm`, wait for **确认结算** and click it.
-- If `checkoutMode=auto`, settlement starts automatically after the deal is prepared.
-
-### Testnet mode (real transactions)
-
-1. Deploy contracts: `pnpm deploy:all:testnet`
-2. Create `apps/web/.env.local` with:
-   - `BASE_GATEWAY_ADDRESS`, `BASE_USDC_ADDRESS`, `ZETA_UNIVERSAL_MARKET`
-   - `POLYGON_WEAPON_ESCROW`, `POLYGON_MOCK_WEAPON_NFT`
-   - `BUYER_PRIVATE_KEY`, `SELLER_PRIVATE_KEY`
-   - Optional RPC overrides: `BASE_SEPOLIA_RPC`, `POLYGON_AMOY_RPC`, `ZETA_ATHENS_RPC`
-
-If env/testnet funding is missing, the UI also supports **Simulation** mode.
-
-### External Agent (LangChain) integration
-
-The UI can proxy an external local Agent via SSE, while keeping the same judge-friendly UI:
-
-- Built-in demo: `GET /api/agent/stream?engine=builtin`
-- Proxy mode: `GET /api/agent/stream?engine=proxy&upstream=http://localhost:8080/api/agent/stream`
-- Tools for your Agent to call: `POST /api/agent/tool`
-
-There is a starter LangChain agent service under `apps/agent`:
-
-- Install: `pnpm -C apps/agent install`
-- Run: `pnpm agent:dev`
-
-### Standalone Market site (apps/market)
-
-For the “agent-friendly e-commerce” idea, there is also a standalone market website under `apps/market` (default port **3001**):
-
-- Run: `pnpm -C apps/market install` then `pnpm market:dev`
-- Discovery: `GET http://localhost:3001/.well-known/universal-ai-market.json`
-
-### Expected Output
+## 项目结构
 
 ```
-=== Cross-Chain Settlement Demo ===
-
-USDC Balances:
-  Buyer:  1000000.0 -> 999920.0 USDC
-  Seller: 0.0 -> 80.0 USDC
-
-NFT Ownership:
-  Token #1: Escrow -> Buyer
-
-=== Verification ===
-[PASS] Buyer spent exactly 80.0 USDC
-[PASS] Seller received 80.0 USDC
-[PASS] NFT successfully transferred to buyer
+├── contracts/              # 智能合约
+│   ├── zevm/              # ZetaChain 合约
+│   └── polygon/           # Polygon 合约
+├── apps/
+│   ├── market/            # 市场前端 (Next.js)
+│   └── agent/             # AI Agent 服务 (LangChain)
+└── scripts/               # 部署和演示脚本
 ```
 
-## Project Structure
+## 团队
 
-```
-├── contracts/
-│   ├── zevm/
-│   │   └── UniversalMarket.sol      # ZetaChain Universal App
-│   └── polygon/
-│       ├── MockWeaponNFT.sol        # ERC-721 game item
-│       └── WeaponEscrow.sol         # NFT escrow contract
-├── scripts/
-│   ├── deploy/
-│   │   └── deploy_local.ts          # Localnet deployment
-│   └── demo/
-│       └── phase1_demo.ts           # E2E demo script
-├── deployed.json                     # Contract addresses (auto-generated)
-└── hardhat.config.ts
-```
+ZetaGen
 
-## Technical Details
+## 相关链接
 
-### Deal Structure
-
-```solidity
-struct Deal {
-    bytes32 dealId;        // Unique deal identifier
-    address buyer;         // Buyer address (receives NFT on Polygon)
-    address sellerBase;    // Seller address (receives payment on Base)
-    address polygonEscrow; // Escrow contract on Polygon
-    address nft;           // NFT contract address
-    uint256 tokenId;       // NFT token ID
-    uint256 price;         // Price in USDC (6 decimals)
-    uint256 deadline;      // Deal expiration timestamp
-}
-```
-
-### Cross-Chain Gas Handling
-
-The UniversalMarket contract handles gas fees for outbound cross-chain calls:
-
-```solidity
-// For gateway.call(), must use matching gas limit for fee calculation
-uint256 callGasLimit = 400000;
-(, uint256 gasFee) = IZRC20(gasZRC20).withdrawGasFeeWithGasLimit(callGasLimit);
-IZRC20(gasZRC20).approve(address(gateway), type(uint256).max);
-gateway.call(..., CallOptions({gasLimit: callGasLimit, ...}));
-```
-
-Key insight: The gateway internally recalculates gas fees using `withdrawGasFeeWithGasLimit(callOptions.gasLimit)`. Your pre-calculated fee must match, or you'll get `LowAllowance` errors.
-
-## Resources
-
-- [ZetaChain Universal Apps](https://www.zetachain.com/docs/developers/chains/zetachain)
-- [Gateway depositAndCall](https://www.zetachain.com/docs/developers/chains/evm/)
-- [Cross-chain Calls Tutorial](https://www.zetachain.com/docs/developers/tutorials/call)
+- [ZetaChain 文档](https://www.zetachain.com/docs)
+- [ZetaChain Explorer](https://athens.explorer.zetachain.com)
 
 ## License
 

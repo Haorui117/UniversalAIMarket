@@ -4,6 +4,7 @@ import { STORES } from "@/lib/catalog";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { CartButton } from "@/components/CartButton";
+import { AgentConnectButton } from "@/components/agent";
 
 type PageProps = {
   searchParams: Promise<{ category?: string }>;
@@ -22,12 +23,13 @@ export default async function HomePage({ searchParams }: PageProps) {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <h1 className="text-2xl font-semibold tracking-tight">Universal AI Market</h1>
           <div className="flex items-center gap-2">
+            <AgentConnectButton />
             <CartButton />
             <Link
               className="glass-panel rounded-lg px-3 py-1.5 text-sm text-white/80 hover:text-white"
               href="/agent"
             >
-              Agent 接入
+              API 文档
             </Link>
           </div>
         </div>
@@ -107,8 +109,9 @@ export default async function HomePage({ searchParams }: PageProps) {
 
       <footer className="mt-10 text-xs text-white/45">
         <div>
-          提示：黑客松 MVP 推荐同时运行 `apps/web`（评委可视化 Demo）与 `apps/agent`（LangChain Agent），
-          本站负责 market + agent APIs。
+          Universal AI Market - 跨链 AI 电商平台 |
+          点击「启动 Agent」体验全自动购物流程 |
+          ZetaChain 跨链结算 + 买卖家 Agent 自动交易
         </div>
       </footer>
     </main>

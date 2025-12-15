@@ -50,7 +50,7 @@ export const STORES: Store[] = [
         name: "量子之剑（NFT）",
         kind: "digital",
         description: "传奇武器 NFT，托管在 Polygon。只有跨链付款完成后才会自动释放给买家。",
-        priceUSDC: "80",
+        priceUSDC: "0.5",
         tokenId: 1,
         demoReady: true,
         inventory: "limited",
@@ -105,7 +105,7 @@ export const STORES: Store[] = [
         kind: "physical",
         description:
           "精品咖啡豆链下发货，但交易在 Base 完成结算，并在 Polygon 发放收据 NFT 用于验真/兑换权益。",
-        priceUSDC: "25",
+        priceUSDC: "0.5",
         tokenId: 7,
         demoReady: true,
         inventory: "in_stock",

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
+import { AgentProvider, AgentSidebar } from "@/components/agent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Universal AI Market (Market)",
-  description: "Human-friendly market + agent-friendly APIs",
+  title: "Universal AI Market",
+  description: "Cross-chain AI-powered marketplace with ZetaChain",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -23,7 +24,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="zh-CN">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <div className="bg-cosmic" />
-        <CartProvider>{children}</CartProvider>
+        <AgentProvider>
+          <CartProvider>{children}</CartProvider>
+          <AgentSidebar />
+        </AgentProvider>
       </body>
     </html>
   );

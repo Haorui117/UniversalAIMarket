@@ -6,8 +6,8 @@ async function main() {
   console.log("Funding UniversalMarket with Polygon gas tokens...");
   console.log("Funder:", deployer.address);
 
-  const marketAddress = process.env.ZETA_UNIVERSAL_MARKET;
-  const polygonGasZRC20 = process.env.POLYGON_GAS_ZRC20;
+  const marketAddress = process.env.ZETA_UNIVERSAL_MARKET || "0xE0EFF1C50040d7Fbcd56F5f0fcFCBad751c07c57";
+  const polygonGasZRC20 = process.env.POLYGON_GAS_ZRC20 || "0x777915D031d1e8144c90D025C594b3b8Bf07a08d";
 
   if (!marketAddress) {
     throw new Error("ZETA_UNIVERSAL_MARKET not set in environment");
@@ -43,8 +43,8 @@ async function main() {
     `Market ${symbol} balance: ${ethers.formatUnits(marketBalance, decimals)}`
   );
 
-  // Transfer some gas tokens to market (0.1 units)
-  const fundAmount = ethers.parseUnits("0.1", decimals);
+  // Transfer some gas tokens to market (0.015 units - keep some for deployer)
+  const fundAmount = ethers.parseUnits("0.015", decimals);
 
   if (deployerBalance < fundAmount) {
     console.log(

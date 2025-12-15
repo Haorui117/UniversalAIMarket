@@ -2,7 +2,11 @@ import { ethers } from "hardhat";
 import type { MockWeaponNFT, WeaponEscrow } from "../../typechain-types";
 
 async function main() {
-  const [deployer, , seller] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  const deployer = signers[0];
+  // When deployer and buyer use the same key, we only have 2 unique signers
+  // Seller is always the last signer in the array
+  const seller = signers[signers.length - 1];
 
   console.log("Deploying Polygon contracts...");
   console.log("Deployer:", deployer.address);

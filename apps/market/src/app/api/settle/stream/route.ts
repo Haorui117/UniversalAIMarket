@@ -15,6 +15,7 @@ const GATEWAY_ABI = [
 const ERC20_ABI = [
   "function balanceOf(address) view returns (uint256)",
   "function approve(address, uint256) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
   "function decimals() view returns (uint8)",
   "function symbol() view returns (string)",
 ];
@@ -227,9 +228,26 @@ export async function GET(req: Request) {
 
           step("approve", { status: "running", detail: `授权 ${ethers.formatUnits(deal.price, decimals)} ${symbol}` });
           log("buyer", `正在授权 Base Gateway 花费 ${ethers.formatUnits(deal.price, decimals)} ${symbol}...`);
-          const approveTx = await usdc.approve(baseGateway!, deal.price);
-          await approveTx.wait();
-          step("approve", { status: "done", txHash: approveTx.hash, detail: "授权完成" });
+
+          // Check current allowance
+          const currentAllowance = (await usdc.allowance(buyer.address, baseGateway!)) as bigint;
+          log("system", `当前授权额度：${ethers.formatUnits(currentAllowance, decimals)} ${symbol}`);
+
+          if (currentAllowance < deal.price) {
+            // Use max uint256 for approval to avoid issues
+            const maxApproval = ethers.MaxUint256;
+            const approveTx = await usdc.approve(baseGateway!, maxApproval);
+            log("system", `等待授权交易确认... (tx: ${approveTx.hash})`);
+            await approveTx.wait(2); // Wait for 2 confirmations
+
+            // Verify allowance after approval
+            const newAllowance = (await usdc.allowance(buyer.address, baseGateway!)) as bigint;
+            log("system", `新授权额度：${ethers.formatUnits(newAllowance, decimals)} ${symbol}`);
+            step("approve", { status: "done", txHash: approveTx.hash, detail: "授权完成" });
+          } else {
+            log("system", "已有足够授权，跳过授权步骤");
+            step("approve", { status: "done", detail: "已有足够授权" });
+          }
 
           step("deposit", { status: "running", detail: "正在调用 Base Gateway 的 depositAndCall..." });
           log("buyer", "正在调用 depositAndCall（开始跨链结算）...");

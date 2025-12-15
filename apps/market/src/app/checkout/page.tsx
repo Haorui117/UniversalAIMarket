@@ -133,8 +133,9 @@ function CheckoutContent() {
       }
     } else if (event === "log" && typeof data === "object" && data !== null) {
       const logData = data as { role?: string; content?: string };
-      if (logData.content) {
-        setLogs((prev) => [...prev, { role: logData.role || "system", content: logData.content }]);
+      const content = logData.content;
+      if (content) {
+        setLogs((prev) => [...prev, { role: logData.role || "system", content }]);
       }
     } else if (event === "done") {
       setIsDone(true);
