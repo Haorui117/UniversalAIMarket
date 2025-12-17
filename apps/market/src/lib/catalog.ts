@@ -53,7 +53,7 @@ export const STORES: Store[] = [
         kind: "digital",
         description: "传奇武器 NFT，托管在 Polygon。只有跨链付款完成后才会自动释放给买家。",
         priceUSDC: "0.5",
-        tokenId: 1,
+        tokenId: 2,
         demoReady: true,
         inventory: "limited",
         leadTime: "秒级交付（跨链完成后释放）",
@@ -109,7 +109,7 @@ export const STORES: Store[] = [
         description:
           "精品咖啡豆链下发货，但交易在 Base 完成结算，并在 Polygon 发放收据 NFT 用于验真/兑换权益。",
         priceUSDC: "0.5",
-        tokenId: 7,
+        tokenId: 8,
         demoReady: true,
         inventory: "in_stock",
         leadTime: "48 小时内发货 + 收据 NFT 秒级交付",

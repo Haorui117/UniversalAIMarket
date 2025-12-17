@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import { sendSse, sendSseComment } from "./sse.js";
-import type { ChatMessagePayload, FlowEmitter, TimelineStepPayload, ToolCallPayload, ToolResultPayload } from "./flowEmitter.js";
+import type { ChatMessagePayload, DealProposalPayload, FlowEmitter, TimelineStepPayload, ToolCallPayload, ToolResultPayload } from "./flowEmitter.js";
 
 export class SseFlowEmitter implements FlowEmitter {
   private res: Response;
@@ -27,6 +27,10 @@ export class SseFlowEmitter implements FlowEmitter {
 
   message(msg: ChatMessagePayload) {
     sendSse(this.res, "message", msg);
+  }
+
+  dealProposal(proposal: DealProposalPayload) {
+    sendSse(this.res, "deal_proposal", proposal);
   }
 
   toolCall(call: ToolCallPayload) {

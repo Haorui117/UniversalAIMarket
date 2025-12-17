@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { EventType, type BaseEvent } from "@ag-ui/core";
 import type {
   ChatMessagePayload,
+  DealProposalPayload,
   FlowEmitter,
   TimelineStepPayload,
   ToolCallPayload,
@@ -86,6 +87,10 @@ export class AguiEmitter implements FlowEmitter {
       rawEvent: msg,
     } as any);
     this.send({ type: EventType.TEXT_MESSAGE_END, messageId: msg.id, rawEvent: msg } as any);
+  }
+
+  dealProposal(proposal: DealProposalPayload) {
+    this.send({ type: EventType.CUSTOM, name: "universal_market.deal_proposal", value: proposal } as any);
   }
 
   toolCall(call: ToolCallPayload) {

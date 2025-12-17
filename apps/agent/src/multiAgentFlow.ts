@@ -11,6 +11,80 @@ type LlmConfig = {
   openAIBaseUrl?: string;
 };
 
+// ============================================
+// Buyer Agent API Types
+// ============================================
+
+type BuyerAgentNegotiateRequest = {
+  sessionId: string;
+  round: number;
+  stage: "opening" | "bargain" | "counter" | "accept" | "reject";
+  product: {
+    id: string;
+    name: string;
+    listPriceUSDC: string;
+    highlights?: string[];
+  };
+  seller: {
+    id: string;
+    name: string;
+    storeName: string;
+    style?: "friendly" | "strict" | "pro";
+  };
+  currentQuote?: {
+    sellerPriceUSDC: string;
+    buyerOfferUSDC?: string;
+  };
+  sellerMessage?: string;
+  expectedAction: "reply" | "decide";
+};
+
+type BuyerAgentNegotiateResponse = {
+  ok: true;
+  message: string;
+  decision?: {
+    accept: boolean;
+    offerPriceUSDC?: string;
+    reason?: string;
+  };
+};
+
+type BuyerAgentConfigResponse = {
+  ok: true;
+  name: string;
+  address: string;
+  budget: {
+    maxPerDealUSDC: string;
+    totalBudgetUSDC: string;
+    spentUSDC: string;
+  };
+};
+
+type BuyerAgentSignRequest = {
+  type: "eip712";
+  chainId: number;
+  domain: {
+    name: string;
+    version: string;
+    chainId: number;
+    verifyingContract: string;
+  };
+  types: Record<string, Array<{ name: string; type: string }>>;
+  message: Record<string, unknown>;
+  dealMeta: {
+    orderId: string;
+    productName: string;
+    storeName: string;
+    timestamp: number;
+  };
+};
+
+type BuyerAgentSignResponse = {
+  ok: true;
+  signature: string;
+  signer: string;
+};
+
 type CatalogStore = {
   id: string;
   name: string;
@@ -54,6 +128,68 @@ function getSellerUpstreams(): string[] {
     if (!unique.includes(url)) unique.push(url);
   }
   return unique;
+}
+
+function getBuyerAgentUrl(): string | null {
+  return isPresent(process.env.BUYER_AGENT_URL) ? process.env.BUYER_AGENT_URL.trim() : null;
+}
+
+// ============================================
+// Buyer Agent API Client
+// ============================================
+
+async function callBuyerAgentConfig(
+  upstream: string,
+  signal: AbortSignal
+): Promise<BuyerAgentConfigResponse | null> {
+  try {
+    const res = await fetch(`${upstream}/config`, { signal });
+    if (!res.ok) return null;
+    const json = (await res.json().catch(() => null)) as BuyerAgentConfigResponse | null;
+    return json?.ok ? json : null;
+  } catch {
+    return null;
+  }
+}
+
+async function callBuyerAgentNegotiate(
+  upstream: string,
+  payload: BuyerAgentNegotiateRequest,
+  signal: AbortSignal
+): Promise<BuyerAgentNegotiateResponse | null> {
+  try {
+    const res = await fetch(`${upstream}/negotiate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal,
+    });
+    if (!res.ok) return null;
+    const json = (await res.json().catch(() => null)) as BuyerAgentNegotiateResponse | null;
+    return json?.ok ? json : null;
+  } catch {
+    return null;
+  }
+}
+
+async function callBuyerAgentSign(
+  upstream: string,
+  payload: BuyerAgentSignRequest,
+  signal: AbortSignal
+): Promise<BuyerAgentSignResponse | null> {
+  try {
+    const res = await fetch(`${upstream}/sign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal,
+    });
+    if (!res.ok) return null;
+    const json = (await res.json().catch(() => null)) as BuyerAgentSignResponse | null;
+    return json?.ok ? json : null;
+  } catch {
+    return null;
+  }
 }
 
 function stageForTool(name: string) {
@@ -228,6 +364,16 @@ async function readSseStream(body: ReadableStream<Uint8Array>, onEvent: (evt: st
   }
 }
 
+// Extract budget from goal text (e.g., "10 USDC 以内" -> 10)
+function extractBudgetFromGoal(goal: string): number | null {
+  const match = goal.match(/(\d+(?:\.\d+)?)\s*USDC\s*(?:以内|内|以下)/i);
+  if (match) {
+    const n = Number(match[1]);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 export async function runMultiAgentFlow({
   market,
   llmCfg,
@@ -236,6 +382,8 @@ export async function runMultiAgentFlow({
   checkoutMode,
   goal,
   buyerNote,
+  budgetUSDC,
+  buyerAgentUrl: buyerAgentUrlParam,
   emitter,
   sessionId,
   startedAt,
@@ -249,12 +397,34 @@ export async function runMultiAgentFlow({
   checkoutMode: CheckoutMode;
   goal: string;
   buyerNote: string;
+  budgetUSDC?: number; // Optional explicit budget; if not provided, extracted from goal
+  buyerAgentUrl?: string; // Optional external Buyer Agent URL
   emitter: FlowEmitter;
   sessionId: string;
   startedAt: number;
   signal: AbortSignal;
   now: () => number;
 }) {
+  // Check for external Buyer Agent
+  const buyerAgentUrl = buyerAgentUrlParam || getBuyerAgentUrl();
+  let buyerAgentConfig: BuyerAgentConfigResponse | null = null;
+
+  if (buyerAgentUrl) {
+    console.log(`[multiAgentFlow] Using external Buyer Agent: ${buyerAgentUrl}`);
+    buyerAgentConfig = await callBuyerAgentConfig(buyerAgentUrl, signal);
+    if (buyerAgentConfig) {
+      console.log(`[multiAgentFlow] Buyer Agent: ${buyerAgentConfig.name}, address: ${buyerAgentConfig.address}`);
+      console.log(`[multiAgentFlow] Budget: max ${buyerAgentConfig.budget.maxPerDealUSDC} USDC per deal (total: ${buyerAgentConfig.budget.totalBudgetUSDC} USDC)`);
+    } else {
+      console.warn(`[multiAgentFlow] Failed to connect to Buyer Agent at ${buyerAgentUrl}, falling back to internal LLM`);
+    }
+  }
+
+  // Determine buyer's budget (use maxPerDealUSDC for single transaction limit)
+  const budget = buyerAgentConfig
+    ? parseFloat(buyerAgentConfig.budget.maxPerDealUSDC)
+    : budgetUSDC ?? extractBudgetFromGoal(goal) ?? 999999;
+
   const emitTool = async <T,>(name: string, args: unknown, runner: () => Promise<T>) => {
     const id = randomUUID();
     emitter.toolCall({ id, stage: stageForTool(name), name, args, ts: now() } as any);
@@ -301,57 +471,221 @@ export async function runMultiAgentFlow({
   if (threads.length === 0) throw new Error("No product found in picked stores");
 
   emitter.timelineStep({ id: "browse", status: "done", detail: `找到 ${threads.length} 个卖家候选`, ts: now() });
-  emitter.timelineStep({ id: "negotiate", status: "running", detail: "买家 Agent 同时和两个卖家 Agent 砍价", ts: now() });
+
+  const buyerAgentName = buyerAgentConfig?.name || "买家 Agent";
+  const negotiateDetail = buyerAgentUrl && buyerAgentConfig
+    ? `外部 Buyer Agent (${buyerAgentName}) 同时和 ${threads.length} 个卖家砍价`
+    : `买家 Agent 同时和 ${threads.length} 个卖家 Agent 砍价（最多5轮）`;
+  emitter.timelineStep({ id: "negotiate", status: "running", detail: negotiateDetail, ts: now() });
 
   const buyerChat = llmCfg.openAIApiKey ? toChat(llmCfg, 0.5) : null;
+  const MAX_ROUNDS = 5;
+  let dealAccepted = false;
+  let acceptedThread: SellerThread | null = null;
+  let acceptedPrice: number | null = null;
 
-  for (let round = 1; round <= 2; round++) {
+  // Helper: check if buyer should accept this quote (internal logic, used when no external agent)
+  const shouldAcceptQuoteInternal = (listPrice: number, quote: number, round: number): boolean => {
+    // MUST be within budget first!
+    if (quote > budget) return false;
+
+    const discountPercent = (listPrice - quote) / listPrice;
+    // Accept if: discount >= 15%, or round >= 3 and discount >= 10%, or round >= 4 and discount >= 5%
+    if (discountPercent >= 0.15) return true;
+    if (round >= 3 && discountPercent >= 0.10) return true;
+    if (round >= 4 && discountPercent >= 0.05) return true;
+    // Also accept if within budget and seller won't go lower (round 5)
+    if (round >= 5 && quote <= budget) return true;
+    return false;
+  };
+
+  // Helper: get buyer's offer based on round (internal logic)
+  const getBuyerOffer = (listPrice: number, round: number): number => {
+    const offerFactors = [0.65, 0.72, 0.78, 0.82, 0.85];
+    const factor = offerFactors[Math.min(round - 1, offerFactors.length - 1)];
+    return round2(listPrice * factor);
+  };
+
+  // Helper: call external buyer agent or use internal logic
+  const callBuyerAgent = async (
+    thread: SellerThread,
+    round: number,
+    stage: "opening" | "bargain" | "counter",
+    sellerMessage?: string
+  ): Promise<{ message: string; decision?: { accept: boolean; offerPriceUSDC?: string } }> => {
+    const listPrice = parsePriceUSDC(thread.product.priceUSDC) ?? 80;
+    const sellerName = thread.store.sellerAgentName || thread.store.sellerAgent?.name || "卖家客服 Agent";
+    const storeName = thread.store.name || thread.store.id;
+
+    // If external buyer agent is available, use it
+    if (buyerAgentUrl && buyerAgentConfig) {
+      const payload: BuyerAgentNegotiateRequest = {
+        sessionId,
+        round,
+        stage,
+        product: {
+          id: thread.product.id,
+          name: thread.product.name,
+          listPriceUSDC: thread.product.priceUSDC,
+          highlights: thread.product.highlights,
+        },
+        seller: {
+          id: thread.store.sellerAgentId || thread.store.id,
+          name: sellerName,
+          storeName,
+          style: thread.store.sellerStyle,
+        },
+        currentQuote: thread.lastQuoteUSDC
+          ? { sellerPriceUSDC: priceString(thread.lastQuoteUSDC) }
+          : undefined,
+        sellerMessage,
+        expectedAction: stage === "counter" ? "decide" : "reply",
+      };
+
+      const res = await callBuyerAgentNegotiate(buyerAgentUrl, payload, signal);
+      if (res) {
+        return { message: res.message, decision: res.decision };
+      }
+      // Fallback to internal if external agent fails
+      console.warn(`[multiAgentFlow] External buyer agent failed, falling back to internal`);
+    }
+
+    // Internal logic
+    const offer = getBuyerOffer(listPrice, round);
+    const offerText = priceString(offer);
+    const sellerAddr = thread.store.sellerAgent?.address ? `（${thread.store.sellerAgent.address.slice(0, 8)}…）` : "";
+
+    if (stage === "counter" && thread.lastQuoteUSDC) {
+      // Decide whether to accept
+      const shouldAccept = shouldAcceptQuoteInternal(listPrice, thread.lastQuoteUSDC, round);
+      if (shouldAccept) {
+        const acceptText = buyerChat
+          ? await agentReply({
+              chat: buyerChat,
+              systemPrompt: buildBuyerSystemPrompt(goal, buyerNote),
+              transcript: thread.transcript,
+              self: "buyer",
+              instruction: `卖家报价 ${priceString(thread.lastQuoteUSDC)} USDC，你决定接受这个价格成交。请用1-2句话表达同意并确认购买。`,
+            })
+          : `好，${priceString(thread.lastQuoteUSDC)} USDC 成交！请帮我安排发货。`;
+        return { message: acceptText, decision: { accept: true } };
+      }
+    }
+
+    // Generate bargaining message
+    const buyerSystem = buildBuyerSystemPrompt(goal, buyerNote);
+    const buyerInstruction =
+      stage === "opening"
+        ? [
+            `你正在联系卖家：${sellerName}${sellerAddr}（店铺：${storeName}）`,
+            `商品：${thread.product.name}，标价 ${thread.product.priceUSDC} USDC。`,
+            "请发起对话并表达你会砍价，询问是否能给优惠。保持 1-2 句。",
+          ].join("\n")
+        : [
+            `继续和卖家：${sellerName}${sellerAddr}（店铺：${storeName}）砍价。`,
+            `商品：${thread.product.name}，标价 ${thread.product.priceUSDC} USDC。`,
+            `卖家上轮报价是 ${thread.lastQuoteUSDC ? priceString(thread.lastQuoteUSDC) : "未知"} USDC。`,
+            `你这轮的出价是 ${offerText} USDC（必须在消息里出现这个数字）。`,
+            "语气要有点拉扯感，但保持理性。1-2 句。",
+          ].join("\n");
+
+    const message = buyerChat
+      ? await agentReply({ chat: buyerChat, systemPrompt: buyerSystem, transcript: thread.transcript, self: "buyer", instruction: buyerInstruction })
+      : fallbackBuyerMessage(goal, stage === "opening" ? undefined : offerText);
+
+    return { message, decision: { accept: false, offerPriceUSDC: offerText } };
+  };
+
+  negotiationLoop: for (let round = 1; round <= MAX_ROUNDS; round++) {
     for (const thread of threads) {
       if (signal.aborted) return;
+      if (dealAccepted) break negotiationLoop;
 
       const storeName = thread.store.name || thread.store.id;
       const sellerName = thread.store.sellerAgentName || thread.store.sellerAgent?.name || "卖家客服 Agent";
       const sellerAddr = thread.store.sellerAgent?.address ? `（${thread.store.sellerAgent.address.slice(0, 8)}…）` : "";
-
       const listPrice = parsePriceUSDC(thread.product.priceUSDC) ?? 80;
-      const offer = round === 1 ? listPrice * 0.65 : listPrice * 0.78;
-      const offerText = priceString(offer);
 
-      const buyerSystem = buildBuyerSystemPrompt(goal, buyerNote);
-      const buyerInstruction =
-        round === 1
-          ? [
-              `你正在联系卖家：${sellerName}${sellerAddr}（店铺：${storeName}）`,
-              `商品：${thread.product.name}，标价 ${thread.product.priceUSDC} USDC。`,
-              "请发起对话并表达你会砍价，询问是否能给优惠。保持 1-2 句。",
-            ].join("\n")
-          : [
-              `继续和卖家：${sellerName}${sellerAddr}（店铺：${storeName}）砍价。`,
-              `你的出价是 ${offerText} USDC（必须在消息里出现这个数字）。`,
-              "语气要有点拉扯感，但保持理性。1-2 句。",
-            ].join("\n");
+      // Determine stage
+      const stage = round === 1 ? "opening" : "counter";
 
-      const buyerText = buyerChat
-        ? await agentReply({ chat: buyerChat, systemPrompt: buyerSystem, transcript: thread.transcript, self: "buyer", instruction: buyerInstruction })
-        : fallbackBuyerMessage(goal, round === 1 ? undefined : offerText);
+      // Get the last seller message for context
+      const lastSellerMsg = thread.transcript.filter(t => t.speaker === "seller").pop()?.content;
 
-      thread.transcript.push({ speaker: "buyer", content: buyerText });
+      // Call buyer agent (external or internal)
+      const buyerResponse = await callBuyerAgent(thread, round, stage, lastSellerMsg);
+
+      // Check if buyer decided to accept
+      if (buyerResponse.decision?.accept && thread.lastQuoteUSDC) {
+        dealAccepted = true;
+        acceptedThread = thread;
+        acceptedPrice = thread.lastQuoteUSDC;
+
+        // Emit buyer acceptance message
+        thread.transcript.push({ speaker: "buyer", content: buyerResponse.message });
+        emitter.message({
+          id: randomUUID(),
+          role: "buyer",
+          stage: "negotiate",
+          speaker: buyerAgentName,
+          content: buyerResponse.message,
+          ts: now(),
+          sellerId: thread.store.sellerAgentId || thread.store.id,
+          storeId: thread.store.id,
+          storeName: thread.store.name || thread.store.id,
+          productId: thread.product.id,
+          productName: thread.product.name,
+          priceUSDC: priceString(thread.lastQuoteUSDC),
+        });
+
+        // Emit seller confirmation
+        const confirmText = `太好了，感谢您的信任！${priceString(thread.lastQuoteUSDC)} USDC 成交确认，马上为您处理订单。\n报价: ${priceString(thread.lastQuoteUSDC)} USDC`;
+        thread.transcript.push({ speaker: "seller", content: confirmText });
+        emitter.message({
+          id: randomUUID(),
+          role: "seller",
+          stage: "negotiate",
+          speaker: `${sellerName}${sellerAddr}`,
+          content: confirmText,
+          ts: now(),
+          sellerId: thread.store.sellerAgentId || thread.store.id,
+          storeId: thread.store.id,
+          storeName: thread.store.name || thread.store.id,
+          productId: thread.product.id,
+          productName: thread.product.name,
+          priceUSDC: priceString(thread.lastQuoteUSDC),
+        });
+
+        break negotiationLoop;
+      }
+
+      // Buyer is bargaining, emit the message
+      thread.transcript.push({ speaker: "buyer", content: buyerResponse.message });
       emitter.message({
         id: randomUUID(),
         role: "buyer",
         stage: "negotiate",
-        speaker: "买家 Agent",
-        content: buyerText,
+        speaker: buyerAgentName,
+        content: buyerResponse.message,
         ts: now(),
+        sellerId: thread.store.sellerAgentId || thread.store.id,
+        storeId: thread.store.id,
+        storeName: thread.store.name || thread.store.id,
+        productId: thread.product.id,
+        productName: thread.product.name,
+        priceUSDC: thread.product.priceUSDC,
       });
 
+      // Now get seller's response
       const style = thread.store.sellerStyle || "pro";
       const floor = round2(listPrice * sellerFloorFactor(style));
-      const target = round === 1 ? round2(listPrice * (style === "strict" ? 0.98 : style === "pro" ? 0.94 : 0.9)) : floor;
+      const discountFactor = style === "strict" ? 0.02 : style === "pro" ? 0.03 : 0.04;
+      const target = round2(Math.max(floor, listPrice * (1 - discountFactor * round)));
+
       const sellerPayload = {
         sessionId,
         round,
-        buyerMessage: buyerText,
+        buyerMessage: buyerResponse.message,
         store: { id: thread.store.id, name: thread.store.name },
         product: {
           id: thread.product.id,
@@ -376,20 +710,151 @@ export async function runMultiAgentFlow({
         speaker: `${sellerSpeakerName}${sellerAddr}`,
         content: sellerText,
         ts: now(),
+        sellerId: thread.store.sellerAgentId || thread.store.id,
+        storeId: thread.store.id,
+        storeName: thread.store.name || thread.store.id,
+        productId: thread.product.id,
+        productName: thread.product.name,
+        priceUSDC: priceString(thread.lastQuoteUSDC),
       });
     }
   }
 
-  const sorted = [...threads].sort((a, b) => (a.lastQuoteUSDC ?? 999999) - (b.lastQuoteUSDC ?? 999999));
-  const winner = sorted[0];
-  const winnerPrice = winner.lastQuoteUSDC ?? (parsePriceUSDC(winner.product.priceUSDC) ?? 80);
+  // Determine winner
+  let winner: SellerThread | null = null;
+  let winnerPrice: number = 0;
+  let forcedLowestPrice = false;
+  let allOverBudget = false;
+
+  if (dealAccepted && acceptedThread && acceptedPrice !== null) {
+    winner = acceptedThread;
+    winnerPrice = acceptedPrice;
+  } else {
+    // No deal explicitly accepted - check if any quote is within budget
+    const sorted = [...threads].sort((a, b) => (a.lastQuoteUSDC ?? 999999) - (b.lastQuoteUSDC ?? 999999));
+    const lowestThread = sorted[0];
+    const lowestPrice = lowestThread.lastQuoteUSDC ?? (parsePriceUSDC(lowestThread.product.priceUSDC) ?? 80);
+
+    if (lowestPrice <= budget) {
+      // Lowest quote is within budget - accept it reluctantly
+      forcedLowestPrice = true;
+      winner = lowestThread;
+      winnerPrice = lowestPrice;
+    } else {
+      // ALL quotes are over budget - no deal possible
+      allOverBudget = true;
+    }
+  }
+
+  // Handle the case where all quotes are over budget
+  if (allOverBudget) {
+    emitter.message({
+      id: randomUUID(),
+      role: "system",
+      stage: "negotiate",
+      speaker: "系统",
+      content: `砍价结束。所有卖家报价均超出预算（${priceString(budget)} USDC），无法达成交易。`,
+      ts: now(),
+    });
+
+    emitter.timelineStep({
+      id: "negotiate",
+      status: "done",
+      detail: `未成交：所有报价超出预算（${priceString(budget)} USDC）`,
+      ts: now(),
+    });
+
+    // No deals generated when all quotes are over budget
+    emitter.state({ running: false });
+    emitter.done({ ok: false, reason: "over_budget" });
+    return;
+  }
+
+  // At this point, winner is guaranteed to be non-null
+  if (!winner) {
+    throw new Error("Unexpected: no winner selected");
+  }
+
   const winnerSellerName = winner.store.sellerAgentName || winner.store.sellerAgent?.name || "卖家客服 Agent";
+  const winnerSellerAddr = winner.store.sellerAgent?.address ? `（${winner.store.sellerAgent.address.slice(0, 8)}…）` : "";
+
+  if (forcedLowestPrice) {
+    // Emit system message explaining the situation
+    emitter.message({
+      id: randomUUID(),
+      role: "system",
+      stage: "negotiate",
+      speaker: "系统",
+      content: `砍价已达${MAX_ROUNDS}轮上限，双方未能达成一致。系统自动选择最低报价：${winner.store.name} 的 ${priceString(winnerPrice)} USDC。`,
+      ts: now(),
+      storeId: winner.store.id,
+      storeName: winner.store.name || winner.store.id,
+      productId: winner.product.id,
+      productName: winner.product.name,
+      priceUSDC: priceString(winnerPrice),
+    });
+
+    // Buyer reluctantly accepts
+    const reluctantAccept = buyerChat
+      ? await agentReply({
+          chat: buyerChat,
+          systemPrompt: buildBuyerSystemPrompt(goal, buyerNote),
+          transcript: winner.transcript,
+          self: "buyer",
+          instruction: `砍价${MAX_ROUNDS}轮后，卖家最低报价是 ${priceString(winnerPrice)} USDC。你虽然觉得还是有点贵，但决定接受。用1-2句话勉强同意成交。`,
+        })
+      : `算了，${priceString(winnerPrice)} USDC 就这样吧，成交。`;
+
+    emitter.message({
+      id: randomUUID(),
+      role: "buyer",
+      stage: "negotiate",
+      speaker: "买家 Agent",
+      content: reluctantAccept,
+      ts: now(),
+      sellerId: winner.store.sellerAgentId || winner.store.id,
+      storeId: winner.store.id,
+      storeName: winner.store.name || winner.store.id,
+      productId: winner.product.id,
+      productName: winner.product.name,
+      priceUSDC: priceString(winnerPrice),
+    });
+
+    // Seller confirms
+    emitter.message({
+      id: randomUUID(),
+      role: "seller",
+      stage: "negotiate",
+      speaker: `${winnerSellerName}${winnerSellerAddr}`,
+      content: `好的，${priceString(winnerPrice)} USDC 成交！感谢您的耐心，马上为您安排。\n报价: ${priceString(winnerPrice)} USDC`,
+      ts: now(),
+      sellerId: winner.store.sellerAgentId || winner.store.id,
+      storeId: winner.store.id,
+      storeName: winner.store.name || winner.store.id,
+      productId: winner.product.id,
+      productName: winner.product.name,
+      priceUSDC: priceString(winnerPrice),
+    });
+  }
 
   emitter.timelineStep({
     id: "negotiate",
     status: "done",
-    detail: `比价完成：选择 ${winner.store.name}，报价 ${priceString(winnerPrice)} USDC`,
+    detail: dealAccepted
+      ? `达成交易：${winner.store.name}，${priceString(winnerPrice)} USDC`
+      : `${MAX_ROUNDS}轮后选择最低价：${winner.store.name}，${priceString(winnerPrice)} USDC`,
     ts: now(),
+  });
+
+  // Emit deal_proposal only for the winner (successful deal)
+  emitter.dealProposal({
+    id: `${winner.store.id}-${winner.product.id}`,
+    storeId: winner.store.id,
+    storeName: winner.store.name || winner.store.id,
+    productId: winner.product.id,
+    productName: winner.product.name,
+    priceUSDC: priceString(winnerPrice),
+    status: "pending",
   });
 
   emitter.state({ selectedStoreId: winner.store.id, selectedProductId: winner.product.id });
@@ -399,7 +864,7 @@ export async function runMultiAgentFlow({
     role: "buyer",
     stage: "prepare",
     speaker: "买家 Agent",
-    content: `我决定选择「${winner.store.name}」成交，按 ${priceString(winnerPrice)} USDC 下单。请确认并准备进入结算。`,
+    content: `确认：选择「${winner.store.name}」，以 ${priceString(winnerPrice)} USDC 成交。准备进入跨链结算流程。`,
     ts: now(),
   });
   emitter.message({
@@ -407,7 +872,7 @@ export async function runMultiAgentFlow({
     role: "seller",
     stage: "prepare",
     speaker: winnerSellerName,
-    content: `收到，确认成交。马上生成订单并进入跨链结算流程。报价: ${priceString(winnerPrice)} USDC`,
+    content: `收到，订单确认！${priceString(winnerPrice)} USDC，马上生成跨链结算订单。\n报价: ${priceString(winnerPrice)} USDC`,
     ts: now(),
   });
 
@@ -451,11 +916,28 @@ export async function runMultiAgentFlow({
   emitter.state({ running: false });
 
   if (checkoutMode === "confirm") {
-    emitter.timelineStep({ id: "confirm", status: "running", detail: "等待确认", ts: now() });
+    const confirmDetail = forcedLowestPrice
+      ? `等待确认（${MAX_ROUNDS}轮砍价后的最低价 ${priceString(winnerPrice)} USDC）`
+      : `等待确认（${priceString(winnerPrice)} USDC）`;
+    emitter.timelineStep({ id: "confirm", status: "running", detail: confirmDetail, ts: now() });
+
+    // Show hint message for manual confirmation
+    if (forcedLowestPrice) {
+      emitter.message({
+        id: randomUUID(),
+        role: "system",
+        stage: "prepare",
+        speaker: "系统提示",
+        content: `这是${MAX_ROUNDS}轮砍价后卖家的最低报价（${priceString(winnerPrice)} USDC）。点击「发起结算」继续，或点击「重置」重新开始。`,
+        ts: now(),
+      });
+    }
+
     emitter.state({ awaitingConfirm: true });
     await waitForConfirm(sessionId, signal);
     if (signal.aborted) return;
     emitter.state({ awaitingConfirm: false });
+    emitter.timelineStep({ id: "confirm", status: "done", detail: "用户已确认", ts: now() });
   } else {
     emitter.timelineStep({ id: "confirm", status: "done", detail: "全自动", ts: now() });
   }

@@ -14,6 +14,9 @@ import {
   type CheckoutMode,
   type AgentEngine,
   type AgentScenario,
+  type SellerChat,
+  type DealItem,
+  type DealItemStatus,
 } from "@/lib/agentContext";
 import { createInitialTimeline, updateTimelineStep } from "@/lib/agentTimeline";
 
@@ -44,6 +47,8 @@ const INITIAL_STATE: AgentState = {
   settling: false,
   timeline: createInitialTimeline(),
   messages: [],
+  sellerChats: [],
+  dealItems: [],
   deal: null,
   errorMessage: null,
 };
@@ -83,6 +88,86 @@ export function AgentProvider({ children }: AgentProviderProps) {
     setState((s) => ({ ...s, messages: [...s.messages, message] }));
   }, []);
 
+  // Add message to a specific seller's chat (creates chat if not exists)
+  const addMessageToSellerChat = useCallback((
+    message: ChatMessage,
+    sellerInfo: {
+      sellerId: string;
+      sellerName: string;
+      storeId: string;
+      storeName: string;
+      productId: string;
+      productName: string;
+      priceUSDC: string;
+    }
+  ) => {
+    setState((s) => {
+      const existingChatIndex = s.sellerChats.findIndex(
+        (c) => c.storeId === sellerInfo.storeId && c.productId === sellerInfo.productId
+      );
+
+      if (existingChatIndex >= 0) {
+        // Update existing chat
+        const updatedChats = [...s.sellerChats];
+        updatedChats[existingChatIndex] = {
+          ...updatedChats[existingChatIndex],
+          messages: [...updatedChats[existingChatIndex].messages, message],
+        };
+        return { ...s, sellerChats: updatedChats };
+      } else {
+        // Create new chat for this seller/product
+        const newChat: SellerChat = {
+          sellerId: sellerInfo.sellerId,
+          sellerName: sellerInfo.sellerName,
+          storeId: sellerInfo.storeId,
+          storeName: sellerInfo.storeName,
+          productId: sellerInfo.productId,
+          productName: sellerInfo.productName,
+          priceUSDC: sellerInfo.priceUSDC,
+          messages: [message],
+          status: "negotiating",
+        };
+        return { ...s, sellerChats: [...s.sellerChats, newChat] };
+      }
+    });
+  }, []);
+
+  // Update seller chat status
+  const updateSellerChatStatus = useCallback((
+    storeId: string,
+    productId: string,
+    status: "negotiating" | "agreed" | "failed",
+    deal?: SerializedDeal
+  ) => {
+    setState((s) => {
+      const updatedChats = s.sellerChats.map((c) =>
+        c.storeId === storeId && c.productId === productId
+          ? { ...c, status, deal }
+          : c
+      );
+      return { ...s, sellerChats: updatedChats };
+    });
+  }, []);
+
+  // Add deal item
+  const addDealItem = useCallback((dealItem: DealItem) => {
+    setState((s) => {
+      // Avoid duplicates
+      const exists = s.dealItems.some((d) => d.id === dealItem.id);
+      if (exists) return s;
+      return { ...s, dealItems: [...s.dealItems, dealItem] };
+    });
+  }, []);
+
+  // Update deal item status
+  const updateDealItemStatus = useCallback((dealId: string, status: DealItemStatus, error?: string) => {
+    setState((s) => ({
+      ...s,
+      dealItems: s.dealItems.map((d) =>
+        d.id === dealId ? { ...d, status, error } : d
+      ),
+    }));
+  }, []);
 
   const setError = useCallback((errorMessage: string | null) => {
     setState((s) => ({ ...s, errorMessage }));
@@ -134,14 +219,73 @@ export function AgentProvider({ children }: AgentProviderProps) {
             speaker: string;
             content: string;
             ts: number;
+            // New fields for seller grouping
+            sellerId?: string;
+            storeId?: string;
+            storeName?: string;
+            productId?: string;
+            productName?: string;
+            priceUSDC?: string;
           };
-          addMessage({
+
+          const chatMessage: ChatMessage = {
             id: msg.id,
             role: msg.role,
             stage: msg.stage,
             speaker: msg.speaker,
             content: msg.content,
             ts: msg.ts,
+          };
+
+          // Add to general messages
+          addMessage(chatMessage);
+
+          // If message has seller info (negotiate stage), also add to seller chat
+          if (msg.storeId && msg.productId && msg.stage === "negotiate") {
+            addMessageToSellerChat(chatMessage, {
+              sellerId: msg.sellerId || msg.storeId,
+              sellerName: msg.speaker,
+              storeId: msg.storeId,
+              storeName: msg.storeName || msg.storeId,
+              productId: msg.productId,
+              productName: msg.productName || "Product",
+              priceUSDC: msg.priceUSDC || "0",
+            });
+          }
+          break;
+        }
+
+        case "deal_proposal": {
+          // New event for deal proposals from negotiations
+          const proposal = data as {
+            id: string;
+            storeId: string;
+            storeName: string;
+            productId: string;
+            productName: string;
+            priceUSDC: string;
+            status: "pending" | "failed";
+            deal?: SerializedDeal;
+          };
+
+          // Update seller chat status
+          updateSellerChatStatus(
+            proposal.storeId,
+            proposal.productId,
+            proposal.status === "pending" ? "agreed" : "failed",
+            proposal.deal
+          );
+
+          // Add to deal items list
+          addDealItem({
+            id: proposal.id,
+            storeId: proposal.storeId,
+            storeName: proposal.storeName,
+            productId: proposal.productId,
+            productName: proposal.productName,
+            priceUSDC: proposal.priceUSDC,
+            status: proposal.status,
+            deal: proposal.deal,
           });
           break;
         }
@@ -200,7 +344,7 @@ export function AgentProvider({ children }: AgentProviderProps) {
     } catch {
       // Ignore JSON parse errors
     }
-  }, [addMessage, setConnectionStatus, setError]);
+  }, [addMessage, addMessageToSellerChat, updateSellerChatStatus, addDealItem, setConnectionStatus, setError]);
 
   const handleAguiEvent = useCallback(
     (event: unknown) => {

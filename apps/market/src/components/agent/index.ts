@@ -8,3 +8,7 @@ export { AgentChatView } from "./AgentChatView";
 export { AgentConnectButton } from "./AgentConnectButton";
 export { AgentSidebar } from "./AgentSidebar";
 export { AgentProvider } from "./AgentProvider";
+export { SellerChatCard } from "./SellerChatCard";
+export { ChatSidebar } from "./ChatSidebar";
+export { DealList } from "./DealList";
+export { DealSidebar } from "./DealSidebar";

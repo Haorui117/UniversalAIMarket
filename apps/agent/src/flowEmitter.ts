@@ -16,6 +16,23 @@ export type ChatMessagePayload = {
   speaker: string;
   content: string;
   ts: number;
+  // Optional: seller info for grouping negotiate stage messages
+  sellerId?: string;
+  storeId?: string;
+  storeName?: string;
+  productId?: string;
+  productName?: string;
+  priceUSDC?: string;
+};
+
+export type DealProposalPayload = {
+  id: string;
+  storeId: string;
+  storeName: string;
+  productId: string;
+  productName: string;
+  priceUSDC: string;
+  status: "pending" | "failed";
 };
 
 export type ToolCallPayload = {
@@ -37,6 +54,7 @@ export interface FlowEmitter {
   state(patch: Record<string, unknown>): void;
   timelineStep(step: TimelineStepPayload): void;
   message(msg: ChatMessagePayload): void;
+  dealProposal(proposal: DealProposalPayload): void;
   toolCall(call: ToolCallPayload): void;
   toolResult(result: ToolResultPayload): void;
   done(payload: unknown): void;

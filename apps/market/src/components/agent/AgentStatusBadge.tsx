@@ -6,6 +6,7 @@ import type { AgentConnectionStatus } from "@/lib/agentContext";
 interface AgentStatusBadgeProps {
   status: AgentConnectionStatus;
   className?: string;
+  compact?: boolean;
 }
 
 const STATUS_CONFIG: Record<
@@ -21,7 +22,7 @@ const STATUS_CONFIG: Record<
   error: { label: "错误", color: "bg-red-500", pulse: false },
 };
 
-export function AgentStatusBadge({ status, className }: AgentStatusBadgeProps) {
+export function AgentStatusBadge({ status, className, compact }: AgentStatusBadgeProps) {
   const config = STATUS_CONFIG[status];
 
   return (
@@ -39,7 +40,7 @@ export function AgentStatusBadge({ status, className }: AgentStatusBadgeProps) {
           className={clsx("relative inline-flex h-2.5 w-2.5 rounded-full", config.color)}
         />
       </span>
-      <span className="text-xs text-white/70">{config.label}</span>
+      {!compact && <span className="text-xs text-white/70">{config.label}</span>}
     </div>
   );
 }

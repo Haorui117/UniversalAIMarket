@@ -37,6 +37,10 @@
     "seller:dev": "pnpm -C apps/seller-agent dev",
     "seller:build": "pnpm -C apps/seller-agent build",
     "seller:start": "pnpm -C apps/seller-agent start",
+
+    "buyer:dev": "pnpm -C apps/buyer-agent dev",
+    "buyer:build": "pnpm -C apps/buyer-agent build",
+    "buyer:start": "pnpm -C apps/buyer-agent start",
     
     "lint": "eslint . --ext .ts",
     "format": "prettier --write ."

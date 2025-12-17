@@ -252,7 +252,7 @@ async function streamBuiltin(req: Request) {
   const url = new URL(req.url);
   const mode: DemoMode = url.searchParams.get("mode") === "testnet" ? "testnet" : "simulate";
   const checkoutMode: CheckoutMode = url.searchParams.get("checkoutMode") === "auto" ? "auto" : "confirm";
-  const goal = url.searchParams.get("goal") || "帮我在这个 AI 电商里找一个 100 USDC 以内的酷炫商品并购买。";
+  const goal = url.searchParams.get("goal") || "帮我在这个 AI 电商里找一个 10 USDC 以内的酷炫商品并购买。";
   const buyerNote = url.searchParams.get("buyerNote") || "";
 
   if (mode === "testnet" && isAuthRequired() && !getSessionFromRequest(req)) {

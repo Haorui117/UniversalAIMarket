@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
-import { AgentProvider, AgentSidebar } from "@/components/agent";
+import { AgentProvider, ChatSidebar, DealSidebar } from "@/components/agent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,8 +25,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <div className="bg-cosmic" />
         <AgentProvider>
+          <ChatSidebar />
           <CartProvider>{children}</CartProvider>
-          <AgentSidebar />
+          <DealSidebar />
         </AgentProvider>
       </body>
     </html>

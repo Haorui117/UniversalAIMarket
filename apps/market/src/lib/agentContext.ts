@@ -60,6 +60,37 @@ export interface SerializedDeal {
   deadline: string;
 }
 
+// === Seller Chat Types (per-seller grouped chat) ===
+export type SellerChatStatus = "negotiating" | "agreed" | "failed";
+
+export interface SellerChat {
+  sellerId: string;
+  sellerName: string;
+  storeId: string;
+  storeName: string;
+  productId: string;
+  productName: string;
+  priceUSDC: string;
+  messages: ChatMessage[];
+  status: SellerChatStatus;
+  deal?: SerializedDeal;
+}
+
+// === Deal Item Types (for deal list) ===
+export type DealItemStatus = "pending" | "settling" | "completed" | "failed";
+
+export interface DealItem {
+  id: string;
+  storeId: string;
+  storeName: string;
+  productId: string;
+  productName: string;
+  priceUSDC: string;
+  status: DealItemStatus;
+  deal?: SerializedDeal;
+  error?: string;
+}
+
 // === Discovery Document ===
 export interface DiscoveryDocument {
   name: string;
@@ -126,7 +157,13 @@ export interface AgentState {
   // Chat
   messages: ChatMessage[];
 
-  // Deal
+  // Per-seller chats (grouped by seller)
+  sellerChats: SellerChat[];
+
+  // Deal list
+  dealItems: DealItem[];
+
+  // Current deal (for settlement)
   deal: SerializedDeal | null;
 
   // Error

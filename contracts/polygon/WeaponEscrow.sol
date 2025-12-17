@@ -13,6 +13,9 @@ contract WeaponEscrow is IERC721Receiver {
     /// @notice The Polygon Gateway address - only this can release NFTs
     address public immutable polygonGateway;
 
+    /// @notice Contract owner for admin functions
+    address public owner;
+
     /// @notice Tracking to prevent replay attacks
     mapping(bytes32 => bool) public processedDeals;
 
@@ -38,6 +41,29 @@ contract WeaponEscrow is IERC721Receiver {
     /// @param _polygonGateway The Polygon Gateway address
     constructor(address _polygonGateway) {
         polygonGateway = _polygonGateway;
+        owner = msg.sender;
+    }
+
+    /// @notice Modifier to restrict to owner
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner");
+        _;
+    }
+
+    /// @notice Transfer ownership
+    function transferOwnership(address newOwner) external onlyOwner {
+        owner = newOwner;
+    }
+
+    /// @notice Admin function to release NFT (for recovery purposes)
+    /// @param buyer The address to receive the NFT
+    /// @param nft The NFT contract address
+    /// @param tokenId The token ID to transfer
+    function adminRelease(address buyer, address nft, uint256 tokenId) external onlyOwner {
+        require(escrowedBy[nft][tokenId] != address(0), "Not escrowed");
+        IERC721(nft).transferFrom(address(this), buyer, tokenId);
+        delete escrowedBy[nft][tokenId];
+        emit NFTReleased(nft, tokenId, buyer, bytes32(0));
     }
 
     /**
