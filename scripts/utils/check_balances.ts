@@ -42,14 +42,15 @@ async function main() {
   const polZrc20 = process.env.POLYGON_GAS_ZRC20 || "0x777915D031d1e8144c90D025C594b3b8Bf07a08d";
   const usdcZrc20 = process.env.USDC_BASE_ZRC20 || "0xd0eFed75622e7AA4555EE44F296dA3744E3ceE19";
   const universalMarket = process.env.ZETA_UNIVERSAL_MARKET;
-  const weaponEscrow = process.env.POLYGON_WEAPON_ESCROW;
-  const mockNft = process.env.POLYGON_MOCK_WEAPON_NFT;
+  // Support both old and new env var names for backwards compatibility
+  const escrow = process.env.POLYGON_ESCROW || process.env.POLYGON_WEAPON_ESCROW;
+  const mockNft = process.env.POLYGON_MOCK_NFT || process.env.POLYGON_MOCK_WEAPON_NFT;
 
   console.log("Addresses:");
   console.log(`  Buyer:  ${buyer.address}`);
   console.log(`  Seller: ${seller.address}`);
   console.log(`  UniversalMarket: ${universalMarket || "NOT SET"}`);
-  console.log(`  WeaponEscrow: ${weaponEscrow || "NOT SET"}`);
+  console.log(`  UniversalEscrow: ${escrow || "NOT SET"}`);
   console.log(`  MockNFT: ${mockNft || "NOT SET"}`);
   console.log("");
 
@@ -96,10 +97,10 @@ async function main() {
       console.log(`  NFT Contract: ${name}`);
 
       // Check token 1 (the sword)
-      for (const tokenId of [1, 7]) {
+      for (const tokenId of [1, 2, 7, 8]) {
         try {
           const owner = await nft.ownerOf(tokenId);
-          const ownerLabel = owner.toLowerCase() === weaponEscrow?.toLowerCase() ? "Escrow" :
+          const ownerLabel = owner.toLowerCase() === escrow?.toLowerCase() ? "Escrow" :
                             owner.toLowerCase() === buyer.address.toLowerCase() ? "Buyer" :
                             owner.toLowerCase() === seller.address.toLowerCase() ? "Seller" : owner;
           console.log(`  Token #${tokenId} owner: ${ownerLabel}`);

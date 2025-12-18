@@ -12,16 +12,16 @@ export interface Deal {
   /** Unique identifier for the deal (keccak256 hash) */
   dealId: string;
   
-  /** Buyer's address - receives NFT on Polygon */
+  /** Buyer's address - receives NFT on target chain */
   buyer: string;
-  
-  /** Seller's Base address - receives USDC payment */
+
+  /** Seller's payment address - receives USDC payment */
   sellerBase: string;
-  
-  /** WeaponEscrow contract address on Polygon */
+
+  /** UniversalEscrow contract address on NFT chain */
   polygonEscrow: string;
-  
-  /** MockWeaponNFT contract address on Polygon */
+
+  /** NFT contract address on target chain */
   nft: string;
   
   /** Token ID of the NFT being purchased */

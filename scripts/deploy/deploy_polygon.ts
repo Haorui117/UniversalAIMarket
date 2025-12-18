@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import type { MockWeaponNFT, WeaponEscrow } from "../../typechain-types";
+import type { MockWeaponNFT, UniversalEscrow } from "../../typechain-types";
 
 async function main() {
   const signers = await ethers.getSigners();
@@ -12,32 +12,33 @@ async function main() {
   console.log("Deployer:", deployer.address);
   console.log("Seller:", seller.address);
 
-  // Deploy MockWeaponNFT
+  // Deploy MockWeaponNFT (demo NFT - can be replaced with any ERC-721)
   const MockWeaponNFT = await ethers.getContractFactory("MockWeaponNFT");
   const nft = (await MockWeaponNFT.deploy()) as unknown as MockWeaponNFT;
   await nft.waitForDeployment();
   const nftAddress = await nft.getAddress();
   console.log("MockWeaponNFT deployed to:", nftAddress);
 
-  // Deploy WeaponEscrow
-  const polygonGateway = process.env.POLYGON_GATEWAY_ADDRESS;
-  if (!polygonGateway) {
+  // Deploy UniversalEscrow
+  // This same contract code works on ANY EVM chain - only the gateway address differs
+  const gatewayAddress = process.env.POLYGON_GATEWAY_ADDRESS;
+  if (!gatewayAddress) {
     throw new Error("POLYGON_GATEWAY_ADDRESS not set in environment");
   }
 
-  const WeaponEscrow = await ethers.getContractFactory("WeaponEscrow");
-  const escrow = (await WeaponEscrow.deploy(
-    polygonGateway
-  )) as unknown as WeaponEscrow;
+  const UniversalEscrow = await ethers.getContractFactory("UniversalEscrow");
+  const escrow = (await UniversalEscrow.deploy(
+    gatewayAddress
+  )) as unknown as UniversalEscrow;
   await escrow.waitForDeployment();
   const escrowAddress = await escrow.getAddress();
-  console.log("WeaponEscrow deployed to:", escrowAddress);
+  console.log("UniversalEscrow deployed to:", escrowAddress);
 
   // Mint NFTs to seller and deposit to escrow (demo-ready tokenIds)
   const tokenIds = [1, 7];
 
   const nftAsSeller = nft.connect(seller) as MockWeaponNFT;
-  const escrowAsSeller = escrow.connect(seller) as WeaponEscrow;
+  const escrowAsSeller = escrow.connect(seller) as UniversalEscrow;
 
   for (const tokenId of tokenIds) {
     const mintTx = await nft.mint(seller.address, tokenId);
@@ -58,8 +59,8 @@ async function main() {
 
   // Output addresses for .env
   console.log("\n=== Add to .env ===");
-  console.log(`POLYGON_MOCK_WEAPON_NFT=${nftAddress}`);
-  console.log(`POLYGON_WEAPON_ESCROW=${escrowAddress}`);
+  console.log(`POLYGON_MOCK_NFT=${nftAddress}`);
+  console.log(`POLYGON_ESCROW=${escrowAddress}`);
 }
 
 main()
