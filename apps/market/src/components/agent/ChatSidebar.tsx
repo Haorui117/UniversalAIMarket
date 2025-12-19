@@ -60,19 +60,22 @@ export function ChatSidebar() {
           onClick={() => setIsExpanded(true)}
           className={clsx(
             "fixed left-0 top-1/2 -translate-y-1/2 z-40",
-            "flex items-center justify-center w-10 h-20 rounded-r-lg",
-            "bg-[#0a0c14]/95 border border-l-0 border-white/10 backdrop-blur-xl",
-            "text-white/60 hover:text-white hover:bg-white/5 transition-colors",
+            "flex items-center justify-center w-8 h-24 rounded-r-xl",
+            "bg-gradient-to-r from-[#0d0b09]/98 to-[#12100d]/95",
+            "border border-l-0 border-[#d4a574]/20 backdrop-blur-xl",
+            "text-[#d4a574]/70 hover:text-[#d4a574] hover:border-[#d4a574]/40",
+            "shadow-lg shadow-black/20 transition-all duration-300",
+            "hover:w-10 hover:shadow-[#d4a574]/10",
             !isActive && "opacity-50"
           )}
           title="打开聊天面板"
         >
-          <div className="flex flex-col items-center gap-1">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <div className="flex flex-col items-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             {sellerChats.length > 0 && (
-              <span className="text-[10px] font-medium text-emerald-400">
+              <span className="text-[9px] font-medium text-[#c8d86a] bg-[#c8d86a]/10 px-1.5 py-0.5 rounded-full">
                 {sellerChats.length}
               </span>
             )}

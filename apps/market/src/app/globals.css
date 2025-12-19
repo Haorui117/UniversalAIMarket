@@ -19,20 +19,101 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-space-grotesk), sans-serif;
   overflow-x: hidden;
   min-height: 100vh;
 }
 
+.font-display {
+  font-family: var(--font-fraunces), serif;
+}
+
+.font-mono {
+  font-family: var(--font-space-mono), monospace;
+}
+
 .bg-cosmic {
   position: fixed;
-  inset: 0;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
   z-index: -1;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.14) 0%, transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(236, 72, 153, 0.11) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
-  filter: blur(40px);
+  filter: blur(60px);
   pointer-events: none;
+}
+
+.bg-cosmic::before,
+.bg-cosmic::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.bg-cosmic::before {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(212, 165, 116, 0.16) 0%, transparent 40%),
+    radial-gradient(circle at 80% 30%, rgba(201, 149, 108, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 40% 70%, rgba(232, 213, 163, 0.09) 0%, transparent 50%),
+    radial-gradient(circle at 90% 70%, rgba(180, 140, 160, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 15% 50%, rgba(140, 160, 180, 0.06) 0%, transparent 35%);
+  animation: cosmic-drift-1 35s ease-in-out infinite;
+}
+
+.bg-cosmic::after {
+  background:
+    radial-gradient(circle at 70% 60%, rgba(245, 239, 228, 0.10) 0%, transparent 40%),
+    radial-gradient(circle at 30% 40%, rgba(185, 187, 173, 0.09) 0%, transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(200, 216, 106, 0.11) 0%, transparent 40%),
+    radial-gradient(circle at 10% 85%, rgba(168, 176, 96, 0.10) 0%, transparent 35%),
+    radial-gradient(circle at 50% 15%, rgba(160, 145, 175, 0.07) 0%, transparent 38%),
+    radial-gradient(circle at 5% 30%, rgba(145, 170, 160, 0.06) 0%, transparent 32%);
+  animation: cosmic-drift-2 45s ease-in-out infinite reverse;
+}
+
+@keyframes cosmic-drift-1 {
+  0%, 100% {
+    transform: translate(0%, 0%) rotate(0deg) scale(1);
+  }
+  14% {
+    transform: translate(4%, -3%) rotate(2deg) scale(1.03);
+  }
+  28% {
+    transform: translate(-2%, 5%) rotate(-1deg) scale(0.97);
+  }
+  42% {
+    transform: translate(6%, 2%) rotate(1.5deg) scale(1.02);
+  }
+  57% {
+    transform: translate(-4%, -4%) rotate(-2deg) scale(0.98);
+  }
+  71% {
+    transform: translate(3%, 6%) rotate(0.5deg) scale(1.01);
+  }
+  85% {
+    transform: translate(-5%, 1%) rotate(-1.5deg) scale(0.99);
+  }
+}
+
+@keyframes cosmic-drift-2 {
+  0%, 100% {
+    transform: translate(0%, 0%) rotate(0deg) scale(1);
+  }
+  17% {
+    transform: translate(-5%, 4%) rotate(-1.5deg) scale(1.02);
+  }
+  33% {
+    transform: translate(3%, -5%) rotate(2deg) scale(0.98);
+  }
+  50% {
+    transform: translate(-3%, -2%) rotate(-0.5deg) scale(1.01);
+  }
+  67% {
+    transform: translate(5%, 3%) rotate(1deg) scale(0.99);
+  }
+  83% {
+    transform: translate(-2%, 6%) rotate(-2deg) scale(1.03);
+  }
 }
 
 .glass-panel {
@@ -44,6 +125,82 @@ body {
 
 .glass-panel:hover {
   border-color: var(--glass-border-light);
+}
+
+.landing-theme {
+  /* Warm brown-black background with lime accents */
+  --landing-bg: #0a0908;
+  --landing-text: #ebeee0;
+  --landing-muted: rgba(221, 225, 210, 0.5);
+  --landing-card: rgba(255, 255, 255, 0.04);
+  --landing-border: rgba(255, 255, 255, 0.08);
+  --landing-accent: #dde1d2;
+  --landing-accent-secondary: #b9bbad;
+  --landing-accent-highlight: #b2c73a;
+
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-border-light: rgba(255, 255, 255, 0.12);
+}
+
+.landing-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(circle at 50% 20%, rgba(0, 0, 0, 0.8), transparent 70%);
+  opacity: 0.5;
+}
+
+.landing-noise {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.015) 0px,
+      rgba(255, 255, 255, 0.015) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.01) 0px,
+      rgba(255, 255, 255, 0.01) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  opacity: 0.15;
+  mix-blend-mode: soft-light;
+}
+
+.landing-orb {
+  filter: blur(60px);
+  opacity: 0.65;
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-4%, 6%) scale(1.08);
+  }
+}
+
+@keyframes float-slower {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6%, -4%) scale(1.05);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 18s ease-in-out infinite;
+}
+
+.animate-float-slower {
+  animation: float-slower 22s ease-in-out infinite;
 }
 
 ::-webkit-scrollbar {
@@ -91,5 +248,56 @@ body {
   to {
     transform: translateX(100%);
   }
+}
+
+/* Landing Page Animations */
+@keyframes nebula-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(2%, 4%) scale(1.1); }
+  66% { transform: translate(-3%, 2%) scale(0.95); }
+}
+
+@keyframes text-shine {
+  from { background-position: 0% 50%; }
+  to { background-position: 200% 50%; }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+.animate-nebula {
+  animation: nebula-float 20s ease-in-out infinite;
+}
+
+.text-gradient-shine {
+  background: linear-gradient(90deg, #f5f5f7 0%, #e0dcd6 50%, #f5f5f7 100%);
+  background-size: 200% auto;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: text-shine 4s ease-in-out infinite;
+}
+
+.bg-radial-glow {
+  background: radial-gradient(circle at center, var(--color-background) 0%, transparent 70%);
+}
+
+/* Keyword highlight - lime/gray-green chrome, no glow */
+.glow-keyword {
+  background: linear-gradient(135deg, #b9bbad 0%, #d5d8cc 30%, #ebeee0 50%, #d5d8cc 70%, #b9bbad 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glow-keyword-strong {
+  background: linear-gradient(135deg, #a8b060 0%, #c5d080 30%, #e8ecd8 50%, #c5d080 70%, #a8b060 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 

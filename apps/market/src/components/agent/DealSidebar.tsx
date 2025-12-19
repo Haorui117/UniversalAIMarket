@@ -96,16 +96,19 @@ export function DealSidebar() {
           onClick={toggleSidebar}
           className={clsx(
             "fixed right-0 top-1/2 -translate-y-1/2 z-40",
-            "flex items-center justify-center w-10 h-20 rounded-l-lg",
-            "bg-[#0a0c14]/95 border border-r-0 border-white/10 backdrop-blur-xl",
-            "text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+            "flex items-center justify-center w-8 h-24 rounded-l-xl",
+            "bg-gradient-to-l from-[#0d0b09]/98 to-[#12100d]/95",
+            "border border-r-0 border-[#d4a574]/20 backdrop-blur-xl",
+            "text-[#d4a574]/70 hover:text-[#d4a574] hover:border-[#d4a574]/40",
+            "shadow-lg shadow-black/20 transition-all duration-300",
+            "hover:w-10 hover:shadow-[#d4a574]/10"
           )}
           title="打开 Agent 面板"
         >
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1.5">
             <AgentStatusBadge status={connectionStatus} compact />
             {pendingDealsCount > 0 && (
-              <span className="text-[10px] font-medium text-sky-400">
+              <span className="text-[9px] font-medium text-[#c8d86a] bg-[#c8d86a]/10 px-1.5 py-0.5 rounded-full">
                 {pendingDealsCount}
               </span>
             )}

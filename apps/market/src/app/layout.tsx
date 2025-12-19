@@ -1,17 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
-import { CartProvider } from "@/components/CartProvider";
-import { AgentProvider, ChatSidebar, DealSidebar } from "@/components/agent";
+import { AppShell } from "@/components/AppShell";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
+  weight: ["400", "600", "700"],
+});
+
+const spaceMono = Space_Mono({
+  variable: "--font-space-mono",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -21,16 +28,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="zh-CN" suppressHydrationWarning>
+      <body className={`${spaceGrotesk.variable} ${fraunces.variable} ${spaceMono.variable} antialiased`} suppressHydrationWarning>
         <div className="bg-cosmic" />
-        <AgentProvider>
-          <ChatSidebar />
-          <CartProvider>{children}</CartProvider>
-          <DealSidebar />
-        </AgentProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
 }
-
