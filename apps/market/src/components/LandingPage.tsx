@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Globe,
   Handshake,
+  Play,
   Route,
   Scan,
   ShieldCheck,
@@ -27,6 +28,7 @@ import { Logo } from "@/components/Logo";
 const sections = [
   { id: "intro", label: "开场" },
   { id: "hero", label: "主页" },
+  { id: "demo", label: "演示" },
   { id: "why-agentic", label: "趋势" },
   { id: "why-web3", label: "Web3" },
   { id: "zetachain", label: "ZetaChain" },
@@ -723,6 +725,73 @@ export function LandingPage() {
           </motion.div>
         </div>
       </motion.section>
+
+      {/* Demo 视频 */}
+      <section id="demo" className="snap-section relative mx-auto max-w-6xl px-6 py-16">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.3 }}
+          className="text-center"
+        >
+          <motion.div
+            variants={fadeUpVariants}
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 backdrop-blur-sm"
+          >
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--landing-accent)] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--landing-accent)]"></span>
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--landing-accent)]">
+              Demo
+            </span>
+          </motion.div>
+
+          <motion.h2
+            variants={fadeUpVariants}
+            className="mt-6 font-display text-3xl md:text-4xl lg:text-5xl"
+          >
+            看看它<span className="glow-keyword">如何运作</span>
+          </motion.h2>
+
+          <motion.p
+            variants={fadeUpVariants}
+            className="mx-auto mt-4 max-w-2xl text-base text-[var(--landing-muted)]"
+          >
+            从意图表达到跨链结算，智能体全程代理。
+          </motion.p>
+
+          {/* 视频容器 */}
+          <motion.div
+            variants={fadeUpVariants}
+            whileHover={{ scale: 1.01, borderColor: "rgba(255,255,255,0.2)" }}
+            className="group relative mt-10 aspect-video w-full max-w-4xl mx-auto rounded-3xl overflow-hidden border border-white/10 bg-[var(--landing-card)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(178,199,58,0.1)]"
+          >
+            {/* Placeholder */}
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white/[0.03] to-transparent">
+              <div className="flex flex-col items-center gap-4">
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/5 backdrop-blur-md transition-all duration-300 group-hover:border-[var(--landing-accent)]/40 group-hover:bg-[var(--landing-accent)]/10"
+                >
+                  <Play className="h-8 w-8 text-white/50 transition-colors duration-300 group-hover:text-[var(--landing-accent)]" />
+                </motion.div>
+                <span className="text-sm text-[var(--landing-muted)]">Demo 视频即将上线</span>
+              </div>
+            </div>
+
+            {/* 装饰性角标 */}
+            <div className="absolute top-4 right-4 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white/40 backdrop-blur-sm">
+              Coming Soon
+            </div>
+
+            {/* 实际视频 (后续替换) */}
+            {/* <video src="/demo.mp4" controls className="w-full h-full object-cover" /> */}
+          </motion.div>
+        </motion.div>
+      </section>
 
       {/* 为什么 Agentic Ecommerce 是趋势 */}
       <section id="why-agentic" className="snap-section relative mx-auto max-w-7xl px-6 py-24">
