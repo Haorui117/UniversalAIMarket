@@ -23,10 +23,11 @@
 你只需要告诉 Agent："帮我买那把量子之剑"，剩下的事情全部自动完成——跨链支付、卖家收款、NFT 交付，一气呵成。
 
 <div align="center">
-  <a href="https://youtu.be/nE3dKHVTGT8">
-    <img src="https://img.youtube.com/vi/nE3dKHVTGT8/hqdefault.jpg" width="480" alt="Demo Video" />
-  </a>
-  <p><em>点击观看演示视频</em></p>
+
+[![Watch Demo Video](https://img.youtube.com/vi/nE3dKHVTGT8/maxresdefault.jpg?v=2)](https://www.youtube.com/watch?v=nE3dKHVTGT8)
+
+*点击观看演示视频*
+
 </div>
 
 ---
