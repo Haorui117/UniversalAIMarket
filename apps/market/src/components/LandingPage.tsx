@@ -768,16 +768,19 @@ export function LandingPage() {
             whileHover={{ scale: 1.01, borderColor: "rgba(255,255,255,0.2)" }}
             className="group relative mt-10 aspect-video w-full max-w-4xl mx-auto rounded-3xl overflow-hidden border border-white/10 bg-[var(--landing-card)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(178,199,58,0.1)]"
           >
-            {/* YouTube Demo Video */}
-            <iframe
-              src="https://www.youtube.com/embed/nE3dKHVTGT8"
+            {/* Demo Video */}
+            <video
+              src="/demo.mp4"
               title="Universal AI Market Demo"
-              className="absolute inset-0 w-full h-full"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
+              className="absolute inset-0 w-full h-full object-cover"
+              controls
+              playsInline
+              preload="metadata"
             />
           </motion.div>
+          <p className="mt-3 text-sm text-[var(--landing-muted)]">
+            视频加载不了？试试 <a href="https://www.youtube.com/watch?v=nE3dKHVTGT8" target="_blank" rel="noopener noreferrer" className="text-[var(--landing-accent)] hover:underline">YouTube</a>
+          </p>
         </motion.div>
       </section>
 

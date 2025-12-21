@@ -24,15 +24,15 @@
 
 <div align="center">
 
-[![Watch Demo Video](./demo-preview.png)](https://www.youtube.com/watch?v=nE3dKHVTGT8)
-
-*点击观看演示视频*
+[**观看演示视频**](./demo.mp4) | [YouTube](https://www.youtube.com/watch?v=nE3dKHVTGT8)
 
 </div>
 
 ---
 
 ## 核心创新
+
+本项目是 **Agentic E-commerce（智能体电商）** 的实践——用户只需表达意图，AI Agent 自主完成搜索、砍价、支付、交付的全流程。Agent 不需要华丽的 UI 干扰操作，而是需要清晰的接口。
 
 ### 1. AI 驱动的购物体验
 
@@ -41,6 +41,8 @@
 - 与卖家 Agent 进行价格协商（支持多卖家竞价）
 - 准备跨链交易参数
 - 实时展示交易进度
+
+卖家同样受益于 Agent 自动化：一键部署 NFT 和托管合约，Seller Agent 7x24 自动响应询价和砍价。
 
 ### 2. ZetaChain 跨链结算
 
