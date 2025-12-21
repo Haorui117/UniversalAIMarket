@@ -4,6 +4,9 @@
   <img src="./apps/market/public/logo.svg" width="200" alt="Universal AI Market Logo" />
   <h1>Universal AI Market</h1>
   <p><strong>AI Agent + ZetaChain = 无缝跨链购物体验</strong></p>
+  <p>
+    <a href="https://github.com/CasualHackathon/UniversalAI-ZetaChain">🏆 通用 AI 共学黑客松（ZetaChain × Qwen）参赛项目</a>
+  </p>
 </div>
 
 
