@@ -24,7 +24,7 @@
 
 <div align="center">
 
-[![Watch Demo Video](https://img.youtube.com/vi/nE3dKHVTGT8/maxresdefault.jpg?v=2)](https://www.youtube.com/watch?v=nE3dKHVTGT8)
+[![Watch Demo Video](./demo-preview.png)](https://www.youtube.com/watch?v=nE3dKHVTGT8)
 
 *点击观看演示视频*
 
