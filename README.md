@@ -24,7 +24,7 @@
 
 <div align="center">
   <a href="https://youtu.be/nE3dKHVTGT8">
-    <img src="https://img.youtube.com/vi/nE3dKHVTGT8/maxresdefault.jpg" width="600" alt="Demo Video" />
+    <img src="https://img.youtube.com/vi/nE3dKHVTGT8/hqdefault.jpg" width="480" alt="Demo Video" />
   </a>
   <p><em>点击观看演示视频</em></p>
 </div>
