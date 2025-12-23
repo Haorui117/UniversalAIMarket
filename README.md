@@ -444,5 +444,4 @@ cd apps/buyer-agent && pnpm dev     # 终端 4
 ---
 
 ## License
-
-MIT
+This project is licensed under the GNU Affero General Public License v3.0 - see the LICENSE file for details.
